@@ -222,9 +222,11 @@ export default function Home() {
                <ChatMessages messages={messages} />
             )}
           </main>
-          <footer className="border-t bg-background/95 backdrop-blur-sm">
-            <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
-          </footer>
+          {!showWelcome && (
+            <footer className="border-t bg-background/95 backdrop-blur-sm">
+              <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
+            </footer>
+          )}
         </div>
       </SidebarInset>
     </SidebarProvider>
