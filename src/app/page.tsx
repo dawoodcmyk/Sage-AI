@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Sparkles, MessageSquare, Plus, PanelLeft, Bot, Image as ImageIcon, Trash2, LogOut } from "lucide-react";
+import { Sparkles, MessageSquare, Plus, PanelLeft, Bot, Image as ImageIcon, Trash2 } from "lucide-react";
 import { type Message, type Conversation } from "@/lib/types";
 import { getAiResponse } from "@/app/actions";
 import { ChatInput } from "@/components/chat/chat-input";
@@ -32,10 +32,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { useAuth } from "@/components/auth-provider";
-import { getAuth, signOut } from "firebase/auth";
-import { useRouter } from "next/navigation";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const features = [
   {
@@ -59,66 +55,54 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [chatStarted, setChatStarted] = useState(false);
 
-  const { user, isLoading: isAuthLoading } = useAuth();
-  const router = useRouter();
-
   useEffect(() => {
-    if (!isAuthLoading && !user) {
-      router.push('/login');
-    }
-  }, [user, isAuthLoading, router]);
+    const savedConversations = localStorage.getItem(`conversations`);
+    const savedActiveId = localStorage.getItem(`activeConversationId`);
 
-  useEffect(() => {
-    if (user) {
-      const savedConversations = localStorage.getItem(`conversations_${user.uid}`);
-      const savedActiveId = localStorage.getItem(`activeConversationId_${user.uid}`);
-
-      if (savedConversations) {
-        const parsedConversations = JSON.parse(savedConversations);
-        if (parsedConversations.length > 0) {
-          setConversations(parsedConversations);
-          if (savedActiveId && parsedConversations.some((c: Conversation) => c.id === savedActiveId)) {
-            setActiveConversationId(savedActiveId);
-          } else {
-            setActiveConversationId(parsedConversations[0].id);
-          }
-          setChatStarted(true);
+    if (savedConversations) {
+      const parsedConversations = JSON.parse(savedConversations);
+      if (parsedConversations.length > 0) {
+        setConversations(parsedConversations);
+        if (savedActiveId && parsedConversations.some((c: Conversation) => c.id === savedActiveId)) {
+          setActiveConversationId(savedActiveId);
         } else {
-          handleNewConversation(false);
+          setActiveConversationId(parsedConversations[0].id);
         }
+        setChatStarted(true);
       } else {
         handleNewConversation(false);
       }
+    } else {
+      handleNewConversation(false);
     }
-  }, [user]);
+  }, []);
 
   useEffect(() => {
-    if (user && conversations.length > 0) {
-      localStorage.setItem(`conversations_${user.uid}`, JSON.stringify(conversations));
-    } else if (user) {
-      localStorage.removeItem(`conversations_${user.uid}`);
+    if (conversations.length > 0) {
+      localStorage.setItem(`conversations`, JSON.stringify(conversations));
+    } else {
+      localStorage.removeItem(`conversations`);
     }
-  }, [conversations, user]);
+  }, [conversations]);
 
   useEffect(() => {
-    if (user && activeConversationId) {
-      localStorage.setItem(`activeConversationId_${user.uid}`, activeConversationId);
-    } else if (user) {
-      localStorage.removeItem(`activeConversationId_${user.uid}`);
+    if (activeConversationId) {
+      localStorage.setItem(`activeConversationId`, activeConversationId);
+    } else {
+      localStorage.removeItem(`activeConversationId`);
     }
-  }, [activeConversationId, user]);
+  }, [activeConversationId]);
 
   const activeConversation = useMemo(() => {
     return conversations.find((c) => c.id === activeConversationId);
   }, [conversations, activeConversationId]);
 
   const handleNewConversation = (startChat: boolean = true) => {
-    if (!user) return;
     const newConversation: Conversation = {
       id: crypto.randomUUID(),
       title: "New Chat",
       messages: [],
-      userId: user.uid,
+      userId: "anonymous",
     };
     setConversations((prev) => [newConversation, ...prev]);
     setActiveConversationId(newConversation.id);
@@ -126,7 +110,7 @@ export default function Home() {
   };
 
   const handleSendMessage = async (messageText: string) => {
-    if (!messageText.trim() || !activeConversationId || !user) return;
+    if (!messageText.trim() || !activeConversationId) return;
 
     if (!chatStarted) {
       setChatStarted(true);
@@ -205,30 +189,16 @@ export default function Home() {
           handleNewConversation(false);
         }
       }
-      if (user && newConversations.length === 0) {
-        localStorage.removeItem(`conversations_${user.uid}`);
+      if (newConversations.length === 0) {
+        localStorage.removeItem(`conversations`);
         handleNewConversation(false);
       }
       return newConversations;
     });
   };
-  
-  const handleSignOut = async () => {
-    const auth = getAuth();
-    await signOut(auth);
-    router.push('/login');
-  };
 
   const messages = activeConversation?.messages ?? [];
   const showWelcome = messages.length === 0 && !chatStarted && conversations.length <= 1 && (conversations[0]?.messages.length === 0 || !conversations[0]);
-
-  if (isAuthLoading || !user) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Bot className="h-12 w-12 animate-spin" />
-      </div>
-    );
-  }
 
   const WelcomeScreen = () => (
     <div className="flex flex-col h-screen">
@@ -289,7 +259,7 @@ export default function Home() {
         </SidebarHeader>
         <SidebarContent className="p-2">
           <SidebarMenu>
-            {conversations.filter(c => c.userId === user.uid).map((conversation) => (
+            {conversations.map((conversation) => (
               <SidebarMenuItem key={conversation.id}>
                 <SidebarMenuButton
                   onClick={() => {
@@ -328,21 +298,6 @@ export default function Home() {
             ))}
           </SidebarMenu>
         </SidebarContent>
-        <SidebarFooter>
-            <div className="flex items-center gap-3">
-              <Avatar className="h-9 w-9">
-                <AvatarImage src={user.photoURL ?? ''} alt={user.displayName ?? 'User'} />
-                <AvatarFallback>{user.displayName?.[0]}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1 truncate">
-                <div className="text-sm font-medium truncate">{user.displayName}</div>
-                <div className="text-xs text-muted-foreground truncate">{user.email}</div>
-              </div>
-              <Button variant="ghost" size="icon" onClick={handleSignOut} aria-label="Sign out">
-                <LogOut className="w-4 h-4" />
-              </Button>
-            </div>
-        </SidebarFooter>
       </Sidebar>
       <SidebarInset>
         <div className="flex flex-col h-screen">
