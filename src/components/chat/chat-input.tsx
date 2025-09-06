@@ -13,6 +13,7 @@ type ChatInputProps = {
 
 export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -29,7 +30,7 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSubmit(e.currentTarget.form as HTMLFormElement);
+      formRef.current?.requestSubmit();
     }
   }
 
@@ -40,7 +41,7 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
 
   return (
     <div className="relative max-w-3xl mx-auto py-4">
-      <form onSubmit={handleSubmit} className="flex items-start gap-4 px-4">
+      <form ref={formRef} onSubmit={handleSubmit} className="flex items-start gap-4 px-4">
         <div className="relative flex-1">
           <Textarea
             ref={inputRef}
