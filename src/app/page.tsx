@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Sparkles, MessageSquare, Plus, PanelLeft, Bot, Image as ImageIcon } from "lucide-react";
+import { Sparkles, MessageSquare, Plus, PanelLeft, Bot, Image as ImageIcon, Trash2 } from "lucide-react";
 import { type Message, type Conversation } from "@/lib/types";
 import { getAiResponse } from "@/app/actions";
 import { ChatInput } from "@/components/chat/chat-input";
@@ -16,9 +16,21 @@ import {
   SidebarMenuButton,
   SidebarProvider,
   SidebarTrigger,
+  SidebarMenuAction,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 const features = [
   {
@@ -61,7 +73,7 @@ export default function Home() {
     if (conversations.length === 0) {
       handleNewConversation(false);
     }
-  }, []);
+  }, [conversations.length]);
 
   const handleSendMessage = async (messageText: string) => {
     if (!messageText.trim() || !activeConversationId) return;
@@ -129,6 +141,21 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleDeleteConversation = (conversationId: string) => {
+    setConversations(prev => {
+      const newConversations = prev.filter(c => c.id !== conversationId);
+      if (activeConversationId === conversationId) {
+        if (newConversations.length > 0) {
+          setActiveConversationId(newConversations[0].id);
+        } else {
+          setActiveConversationId(null);
+          setChatStarted(false);
+        }
+      }
+      return newConversations;
+    });
   };
   
   const messages = activeConversation?.messages ?? [];
@@ -207,6 +234,27 @@ export default function Home() {
                   <MessageSquare className="w-4 h-4 mr-2" />
                   <span className="truncate">{conversation.title}</span>
                 </SidebarMenuButton>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <SidebarMenuAction showOnHover>
+                      <Trash2 />
+                    </SidebarMenuAction>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will permanently delete this chat.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleDeleteConversation(conversation.id)}>
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </SidebarMenuItem>
             ))}
           </SidebarMenu>

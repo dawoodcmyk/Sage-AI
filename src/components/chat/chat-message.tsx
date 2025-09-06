@@ -1,16 +1,26 @@
 "use client";
 
 import Image from "next/image";
-import { Bot, User } from "lucide-react";
+import { Bot, User, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type Message } from "@/lib/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 
 export function ChatMessage({ message }: { message: Message }) {
   const { role, content, type } = message;
 
   const isAi = role === "ai";
+
+  const handleDownload = () => {
+    const link = document.createElement("a");
+    link.href = content;
+    link.download = `sage-image-${new Date().toISOString()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   if (type === "loading") {
     return (
@@ -51,22 +61,32 @@ export function ChatMessage({ message }: { message: Message }) {
       </Avatar>
       <div
         className={cn(
-          "max-w-xl rounded-lg p-4",
-          isAi ? "bg-secondary" : "bg-primary text-primary-foreground ml-auto"
+          "max-w-xl rounded-lg p-4 relative group",
+          isAi ? "bg-secondary" : "bg-black text-white ml-auto"
         )}
       >
         {type === "image" ? (
-          <Image
-            src={content}
-            alt="Generated image"
-            width={400}
-            height={400}
-            className="rounded-md"
-            data-ai-hint="generated image"
-          />
+          <>
+            <Image
+              src={content}
+              alt="Generated image"
+              width={400}
+              height={400}
+              className="rounded-md"
+              data-ai-hint="generated image"
+            />
+            <Button
+              size="icon"
+              variant="ghost"
+              className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={handleDownload}
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+          </>
         ) : (
           <div
-            className="prose prose-sm prose-invert"
+            className={cn("prose prose-sm", isAi ? "prose-invert" : "")}
             dangerouslySetInnerHTML={{ __html: content.replace(/\n/g, '<br />') }}
           />
         )}
