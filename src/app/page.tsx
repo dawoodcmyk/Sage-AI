@@ -54,6 +54,44 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [chatStarted, setChatStarted] = useState(false);
 
+  useEffect(() => {
+    const savedConversations = localStorage.getItem("conversations");
+    const savedActiveId = localStorage.getItem("activeConversationId");
+
+    if (savedConversations) {
+      const parsedConversations = JSON.parse(savedConversations);
+      if (parsedConversations.length > 0) {
+        setConversations(parsedConversations);
+        if (savedActiveId && parsedConversations.some((c: Conversation) => c.id === savedActiveId)) {
+          setActiveConversationId(savedActiveId);
+        } else {
+          setActiveConversationId(parsedConversations[0].id);
+        }
+        setChatStarted(true);
+      } else {
+        handleNewConversation(false);
+      }
+    } else {
+      handleNewConversation(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (conversations.length > 0) {
+      localStorage.setItem("conversations", JSON.stringify(conversations));
+    } else {
+      localStorage.removeItem("conversations");
+    }
+  }, [conversations]);
+
+  useEffect(() => {
+    if (activeConversationId) {
+      localStorage.setItem("activeConversationId", activeConversationId);
+    } else {
+      localStorage.removeItem("activeConversationId");
+    }
+  }, [activeConversationId]);
+
   const activeConversation = useMemo(() => {
     return conversations.find((c) => c.id === activeConversationId);
   }, [conversations, activeConversationId]);
@@ -68,12 +106,6 @@ export default function Home() {
     setActiveConversationId(newConversation.id);
     setChatStarted(startChat);
   };
-  
-  useEffect(() => {
-    if (conversations.length === 0) {
-      handleNewConversation(false);
-    }
-  }, [conversations.length]);
 
   const handleSendMessage = async (messageText: string) => {
     if (!messageText.trim() || !activeConversationId) return;
@@ -152,14 +184,21 @@ export default function Home() {
         } else {
           setActiveConversationId(null);
           setChatStarted(false);
+          // Create a new chat if all are deleted
+          handleNewConversation(false);
         }
+      }
+      if (newConversations.length === 0) {
+        localStorage.removeItem('conversations');
+        handleNewConversation(false);
       }
       return newConversations;
     });
   };
   
   const messages = activeConversation?.messages ?? [];
-  const showWelcome = messages.length === 0 && !chatStarted;
+  const showWelcome = messages.length === 0 && !chatStarted && conversations.length <= 1 && (conversations[0]?.messages.length === 0 || !conversations[0]);
+
 
   const WelcomeScreen = () => (
     <div className="flex flex-col h-screen">
