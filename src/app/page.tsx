@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Sparkles, MessageSquare, Plus, PanelLeft } from "lucide-react";
+import { Sparkles, MessageSquare, Plus, PanelLeft, Bot, Image as ImageIcon, Wand2 } from "lucide-react";
 import { type Message, type Conversation } from "@/lib/types";
 import { getAiResponse } from "@/app/actions";
 import { ChatInput } from "@/components/chat/chat-input";
@@ -18,6 +18,29 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+const features = [
+  {
+    icon: <Bot className="w-6 h-6" />,
+    title: "Intelligent Chat",
+    description: "Ask complex questions, get thoughtful answers, and explore topics in depth.",
+    example: "What is the meaning of life?",
+  },
+  {
+    icon: <ImageIcon className="w-6 h-6" />,
+    title: "Image Generation",
+    description: "Bring your ideas to life by generating images from text descriptions.",
+    example: "/imagine A futuristic city at sunset",
+  },
+  {
+    icon: <Wand2 className="w-6 h-6" />,
+    title: "Word Creation",
+    description: "Invent new words for unique concepts and feelings.",
+    example: "/word The feeling of a lazy Sunday afternoon",
+  },
+];
+
 
 export default function Home() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -110,16 +133,7 @@ export default function Home() {
     }
   };
   
-  const welcomeMessage: Message = {
-    id: 'welcome-message',
-    role: 'ai',
-    content: "Hello! I'm Sage. Ask me anything, or try `/imagine <prompt>` to generate an image or `/word <concept>` to create a new word.",
-    type: 'text'
-  };
-
   const messages = activeConversation?.messages ?? [];
-  const initialMessages = messages.length > 0 ? messages : (isClient ? [welcomeMessage] : []);
-
 
   return (
     <SidebarProvider>
@@ -162,7 +176,37 @@ export default function Home() {
             </div>
           </header>
           <main className="flex-1 overflow-hidden flex flex-col">
-            <ChatMessages messages={initialMessages} />
+            {messages.length > 0 ? (
+              <ChatMessages messages={messages} />
+            ) : (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="max-w-4xl mx-auto p-8">
+                  <div className="text-center mb-12">
+                     <h2 className="text-3xl font-bold tracking-tight">Your intelligent chat assistant</h2>
+                    <p className="text-muted-foreground mt-2">Ask me anything, or try one of the features below.</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {features.map((feature, index) => (
+                      <Card key={index} className="bg-secondary/50 hover:bg-secondary transition-colors">
+                        <CardHeader className="flex flex-row items-center gap-4">
+                          {feature.icon}
+                          <CardTitle className="text-lg">{feature.title}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-sm text-muted-foreground">{feature.description}</p>
+                           <button
+                              onClick={() => handleSendMessage(feature.example)}
+                              className="text-sm text-primary/80 hover:text-primary mt-4 text-left w-full"
+                            >
+                              Try: "{feature.example}"
+                            </button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </main>
           <footer className="border-t bg-background/95 backdrop-blur-sm">
             <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
@@ -172,3 +216,5 @@ export default function Home() {
     </SidebarProvider>
   );
 }
+
+    
