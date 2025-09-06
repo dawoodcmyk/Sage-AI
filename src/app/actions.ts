@@ -2,6 +2,7 @@
 
 import { answerUserQuestion } from "@/ai/flows/answer-user-question";
 import { generateImage } from "@/ai/flows/generate-image";
+import { correctText } from "@/ai/flows/correct-text";
 
 export type AIResponse = {
   role: "ai";
@@ -15,16 +16,21 @@ export async function getAiResponse(message: string): Promise<AIResponse> {
   let response: { content: string; type: "text" | "image" };
 
   try {
+    const correctionResult = await correctText({ text: message });
+    const correctedMessage = correctionResult.correctedText;
+
     if (imagineMatch) {
         const prompt = imagineMatch[1];
         if (!prompt) {
           throw new Error("Please provide a prompt for /imagine.");
         }
-        const result = await generateImage({ prompt });
+        const correctionResultForImagine = await correctText({ text: prompt });
+        const correctedPrompt = correctionResultForImagine.correctedText;
+        const result = await generateImage({ prompt: correctedPrompt });
         response = { content: result.imageDataUri, type: "image" };
     }
     else {
-      const result = await answerUserQuestion({ question: message });
+      const result = await answerUserQuestion({ question: correctedMessage });
       response = { content: result.answer, type: "text" };
     }
   } catch (error) {
