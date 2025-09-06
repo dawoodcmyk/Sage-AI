@@ -140,11 +140,57 @@ export default function Home() {
   const messages = activeConversation?.messages ?? [];
   const showWelcome = messages.length === 0 && !chatStarted;
 
-  return (
+  const WelcomeScreen = () => (
+    <div className="flex flex-col h-screen">
+      <header className="flex items-center p-4 border-b shrink-0 h-16">
+        <div className="flex items-center gap-2 mx-auto">
+          <Sparkles className="h-6 w-6 text-primary" />
+          <h1 className="text-xl font-semibold">Sage</h1>
+        </div>
+      </header>
+      <main className="flex-1 overflow-hidden flex flex-col">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="max-w-4xl mx-auto p-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold tracking-tight">Your intelligent chat assistant</h2>
+              <p className="text-muted-foreground mt-2">Ask me anything, or try one of the features below.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {features.map((feature, index) => (
+                <Card key={index} className="bg-secondary/50 hover:bg-secondary transition-colors">
+                  <CardHeader className="flex flex-row items-center gap-4">
+                    {feature.icon}
+                    <CardTitle className="text-lg">{feature.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">{feature.description}</p>
+                      <button
+                        onClick={() => handleSendMessage(feature.example)}
+                        className="text-sm text-primary/80 hover:text-primary mt-4 text-left w-full"
+                      >
+                        Try: "{feature.example}"
+                      </button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            <div className="text-center mt-12">
+                <Button size="lg" onClick={() => setChatStarted(true)}>
+                  <Sparkles className="w-5 h-5 mr-2" />
+                  Start New Chat
+                </Button>
+              </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+
+  const ChatInterface = () => (
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-           <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => handleNewConversation()}>
               <Plus className="w-4 h-4 mr-2" />
               <span>New Chat</span>
@@ -184,51 +230,15 @@ export default function Home() {
             </div>
           </header>
           <main className="flex-1 overflow-hidden flex flex-col">
-            {showWelcome ? (
-               <div className="flex-1 flex items-center justify-center">
-                <div className="max-w-4xl mx-auto p-8">
-                  <div className="text-center mb-12">
-                     <h2 className="text-3xl font-bold tracking-tight">Your intelligent chat assistant</h2>
-                    <p className="text-muted-foreground mt-2">Ask me anything, or try one of the features below.</p>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {features.map((feature, index) => (
-                      <Card key={index} className="bg-secondary/50 hover:bg-secondary transition-colors">
-                        <CardHeader className="flex flex-row items-center gap-4">
-                          {feature.icon}
-                          <CardTitle className="text-lg">{feature.title}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-sm text-muted-foreground">{feature.description}</p>
-                           <button
-                              onClick={() => handleSendMessage(feature.example)}
-                              className="text-sm text-primary/80 hover:text-primary mt-4 text-left w-full"
-                            >
-                              Try: "{feature.example}"
-                            </button>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                   <div className="text-center mt-12">
-                      <Button size="lg" onClick={() => setChatStarted(true)}>
-                        <Sparkles className="w-5 h-5 mr-2" />
-                        Start New Chat
-                      </Button>
-                    </div>
-                </div>
-              </div>
-            ) : (
-               <ChatMessages messages={messages} />
-            )}
+            <ChatMessages messages={messages} />
           </main>
-          {!showWelcome && (
-            <footer className="border-t bg-background/95 backdrop-blur-sm">
-              <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
-            </footer>
-          )}
+          <footer className="border-t bg-background/95 backdrop-blur-sm">
+            <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
+          </footer>
         </div>
       </SidebarInset>
     </SidebarProvider>
   );
+
+  return showWelcome ? <WelcomeScreen /> : <ChatInterface />;
 }
