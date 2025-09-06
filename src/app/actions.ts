@@ -1,7 +1,6 @@
 "use server";
 
 import { answerUserQuestion } from "@/ai/flows/answer-user-question";
-import { createSapling } from "@/ai/flows/create-sapling";
 import { generateImage } from "@/ai/flows/generate-image";
 
 export type AIResponse = {
@@ -11,20 +10,12 @@ export type AIResponse = {
 };
 
 export async function getAiResponse(message: string): Promise<AIResponse> {
-  const saplingMatch = message.match(/^\/sapling\s+(.*)/s);
   const imagineMatch = message.match(/^\/imagine\s+(.*)/s);
 
   let response: { content: string; type: "text" | "image" };
 
   try {
-    if (saplingMatch) {
-      const topic = saplingMatch[1];
-      if (!topic) {
-        throw new Error("Please provide a topic for /sapling.");
-      }
-      const result = await createSapling({ topic });
-      response = { content: `**Idea Seed:** ${result.seed}\n\n**Prompt:** ${result.prompt}`, type: "text" };
-    } else if (imagineMatch) {
+    if (imagineMatch) {
         const prompt = imagineMatch[1];
         if (!prompt) {
           throw new Error("Please provide a prompt for /imagine.");
