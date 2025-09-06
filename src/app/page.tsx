@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Sparkles, MessageSquare, Plus, PanelLeft, Bot, Image as ImageIcon, Wand2 } from "lucide-react";
+import { Sparkles, MessageSquare, Plus, PanelLeft, Bot, Image as ImageIcon } from "lucide-react";
 import { type Message, type Conversation } from "@/lib/types";
 import { getAiResponse } from "@/app/actions";
 import { ChatInput } from "@/components/chat/chat-input";
@@ -32,12 +32,6 @@ const features = [
     title: "Image Generation",
     description: "Bring your ideas to life by generating images from text descriptions.",
     example: "/imagine A futuristic city at sunset",
-  },
-  {
-    icon: <Wand2 className="w-6 h-6" />,
-    title: "Word Creation",
-    description: "Invent new words for unique concepts and feelings.",
-    example: "/word The feeling of a lazy Sunday afternoon",
   },
 ];
 
@@ -155,7 +149,7 @@ export default function Home() {
               <h2 className="text-3xl font-bold tracking-tight">Your intelligent chat assistant</h2>
               <p className="text-muted-foreground mt-2">Ask me anything, or try one of the features below.</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {features.map((feature, index) => (
                 <Card key={index} className="bg-secondary/50 hover:bg-secondary transition-colors">
                   <CardHeader className="flex flex-row items-center gap-4">
