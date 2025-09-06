@@ -73,7 +73,7 @@ export default function Home() {
   const welcomeMessage: Message = {
     id: 'welcome-message',
     role: 'ai',
-    content: "Hello! I'm Sage. Ask me anything, or try `/imagine <prompt>` to create an image.",
+    content: "Hello! I'm Sage. Ask me anything, or try `/sapling <topic>` to grow a new idea.",
     type: 'text'
   };
   
