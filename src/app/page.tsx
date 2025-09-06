@@ -54,10 +54,22 @@ export default function Home() {
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [chatStarted, setChatStarted] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    const savedConversations = localStorage.getItem(`conversations`);
-    const savedActiveId = localStorage.getItem(`activeConversationId`);
+    let currentUserId = localStorage.getItem('anonymousUserId');
+    if (!currentUserId) {
+      currentUserId = crypto.randomUUID();
+      localStorage.setItem('anonymousUserId', currentUserId);
+    }
+    setUserId(currentUserId);
+  }, []);
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const savedConversations = localStorage.getItem(`conversations_${userId}`);
+    const savedActiveId = localStorage.getItem(`activeConversationId_${userId}`);
 
     if (savedConversations) {
       const parsedConversations = JSON.parse(savedConversations);
@@ -75,34 +87,37 @@ export default function Home() {
     } else {
       handleNewConversation(false);
     }
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
+    if (!userId) return;
     if (conversations.length > 0) {
-      localStorage.setItem(`conversations`, JSON.stringify(conversations));
+      localStorage.setItem(`conversations_${userId}`, JSON.stringify(conversations));
     } else {
-      localStorage.removeItem(`conversations`);
+      localStorage.removeItem(`conversations_${userId}`);
     }
-  }, [conversations]);
+  }, [conversations, userId]);
 
   useEffect(() => {
+    if (!userId) return;
     if (activeConversationId) {
-      localStorage.setItem(`activeConversationId`, activeConversationId);
+      localStorage.setItem(`activeConversationId_${userId}`, activeConversationId);
     } else {
-      localStorage.removeItem(`activeConversationId`);
+      localStorage.removeItem(`activeConversationId_${userId}`);
     }
-  }, [activeConversationId]);
+  }, [activeConversationId, userId]);
 
   const activeConversation = useMemo(() => {
     return conversations.find((c) => c.id === activeConversationId);
   }, [conversations, activeConversationId]);
 
   const handleNewConversation = (startChat: boolean = true) => {
+    if (!userId) return;
     const newConversation: Conversation = {
       id: crypto.randomUUID(),
       title: "New Chat",
       messages: [],
-      userId: "anonymous",
+      userId: userId,
     };
     setConversations((prev) => [newConversation, ...prev]);
     setActiveConversationId(newConversation.id);
@@ -178,6 +193,7 @@ export default function Home() {
   };
 
   const handleDeleteConversation = (conversationId: string) => {
+    if (!userId) return;
     setConversations(prev => {
       const newConversations = prev.filter(c => c.id !== conversationId);
       if (activeConversationId === conversationId) {
@@ -190,7 +206,7 @@ export default function Home() {
         }
       }
       if (newConversations.length === 0) {
-        localStorage.removeItem(`conversations`);
+        localStorage.removeItem(`conversations_${userId}`);
         handleNewConversation(false);
       }
       return newConversations;
@@ -199,6 +215,14 @@ export default function Home() {
 
   const messages = activeConversation?.messages ?? [];
   const showWelcome = messages.length === 0 && !chatStarted && conversations.length <= 1 && (conversations[0]?.messages.length === 0 || !conversations[0]);
+
+  if (!userId) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Bot className="h-12 w-12 animate-spin" />
+      </div>
+    );
+  }
 
   const WelcomeScreen = () => (
     <div className="flex flex-col h-screen">
