@@ -4,3 +4,9 @@ export type Message = {
   content: string;
   type: "text" | "image" | "loading";
 };
+
+export type Conversation = {
+  id: string;
+  title: string;
+  messages: Message[];
+};
