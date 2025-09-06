@@ -6,12 +6,12 @@ import { getAuth } from "firebase/auth";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyBOv25CVjWkNcuuAejJqImEqfNKMM_AdaI",
+  authDomain: "sage-bj4i9.firebaseapp.com",
+  projectId: "sage-bj4i9",
+  storageBucket: "sage-bj4i9.firebasestorage.app",
+  messagingSenderId: "379852576655",
+  appId: "1:379852576655:web:7e6f33053fc98e960cddfa"
 };
 
 // Initialize Firebase
