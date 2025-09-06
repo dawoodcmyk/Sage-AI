@@ -10,7 +10,7 @@ export type AIResponse = {
 };
 
 export async function getAiResponse(message: string): Promise<AIResponse> {
-  const imagineMatch = message.match(/^\/imagine\s+(.*)/);
+  const imagineMatch = message.match(/^\/imagine\s+(.*)/s);
 
   let response: { content: string; type: "text" | "image" };
 
