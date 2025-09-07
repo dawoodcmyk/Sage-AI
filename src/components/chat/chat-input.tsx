@@ -12,6 +12,7 @@ type ChatInputProps = {
 };
 
 export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
+  const [message, setMessage] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -19,11 +20,10 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const message = inputRef.current?.value || "";
     if ((message.trim() || imagePreview) && !isLoading) {
       await onSendMessage(message, imagePreview || undefined);
+      setMessage("");
       if (inputRef.current) {
-        inputRef.current.value = "";
         inputRef.current.style.height = 'auto';
       }
       setImagePreview(null);
@@ -41,6 +41,7 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
   }
 
   const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setMessage(e.target.value);
     e.target.style.height = 'auto';
     e.target.style.height = `${e.target.scrollHeight}px`;
   }
@@ -63,6 +64,8 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
     }
   }
 
+  const isButtonDisabled = isLoading || (!message.trim() && !imagePreview);
+
   return (
     <div className="relative max-w-3xl mx-auto py-4">
       <form ref={formRef} onSubmit={handleSubmit} className="flex items-start gap-4 px-4">
@@ -77,13 +80,14 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
           )}
           <Textarea
             ref={inputRef}
+            value={message}
             placeholder="Ask Sage anything, or attach an image..."
             disabled={isLoading}
             className="pr-24 resize-none max-h-48"
             aria-label="Chat input"
             rows={1}
             onKeyDown={handleKeyDown}
-            onInput={handleInput}
+            onChange={handleInput}
           />
           <div className="absolute inset-y-0 right-0 flex items-center pr-3">
              <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
@@ -93,7 +97,7 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
              <Button
               type="submit"
               size="icon"
-              disabled={isLoading || (!inputRef.current?.value?.trim() && !imagePreview)}
+              disabled={isButtonDisabled}
               aria-label="Send message"
               className="shrink-0 h-8 w-8"
             >
