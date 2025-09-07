@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -124,8 +125,8 @@ export default function Home() {
     setChatStarted(startChat);
   };
 
-  const handleSendMessage = async (messageText: string) => {
-    if (!messageText.trim() || !activeConversationId) return;
+  const handleSendMessage = async (messageText: string, imageDataUri?: string) => {
+    if ((!messageText.trim() && !imageDataUri) || !activeConversationId) return;
 
     if (!chatStarted) {
       setChatStarted(true);
@@ -135,7 +136,8 @@ export default function Home() {
       id: crypto.randomUUID(),
       role: "user",
       content: messageText,
-      type: "text",
+      type: imageDataUri ? "image" : "text",
+      imageDataUri: imageDataUri
     };
 
     const loadingMessage: Message = {
@@ -161,7 +163,7 @@ export default function Home() {
     setIsLoading(true);
 
     try {
-      const aiResponse = await getAiResponse(messageText);
+      const aiResponse = await getAiResponse(messageText, imageDataUri);
       setConversations((prev) =>
         prev.map((c) => {
           if (c.id === activeConversationId) {

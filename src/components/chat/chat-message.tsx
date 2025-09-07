@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 
 export function ChatMessage({ message }: { message: Message }) {
-  const { role, content, type } = message;
+  const { role, content, type, imageDataUri } = message;
 
   const isAi = role === "ai";
 
@@ -39,6 +39,54 @@ export function ChatMessage({ message }: { message: Message }) {
     );
   }
 
+  const renderContent = () => {
+    if (role === 'user' && imageDataUri) {
+      return (
+        <div className="space-y-2">
+          <Image
+            src={imageDataUri}
+            alt="User uploaded image"
+            width={400}
+            height={400}
+            className="rounded-md"
+            data-ai-hint="user image"
+          />
+          {content && <p>{content}</p>}
+        </div>
+      )
+    }
+
+    if (type === "image") {
+        return (
+          <div className="flex items-center gap-4">
+            <Image
+                src={content}
+                alt="Generated image"
+                width={400}
+                height={400}
+                className="rounded-md"
+                data-ai-hint="generated image"
+            />
+            <Button
+                size="icon"
+                variant="ghost"
+                className="shrink-0"
+                onClick={handleDownload}
+            >
+                <Download className="h-4 w-4" />
+            </Button>
+          </div>
+        );
+    }
+    
+    return (
+      <div
+        className={cn("prose prose-sm", isAi ? "prose-invert" : "")}
+        dangerouslySetInnerHTML={{ __html: content.replace(/\n/g, '<br />') }}
+      />
+    );
+  };
+
   return (
     <div
       className={cn(
@@ -61,35 +109,11 @@ export function ChatMessage({ message }: { message: Message }) {
       </Avatar>
       <div
         className={cn(
-          "max-w-xl rounded-lg p-4 relative group",
+          "max-w-xl rounded-lg p-4",
           isAi ? "bg-secondary" : "bg-black text-white ml-auto"
         )}
       >
-        {type === "image" ? (
-          <>
-            <Image
-              src={content}
-              alt="Generated image"
-              width={400}
-              height={400}
-              className="rounded-md"
-              data-ai-hint="generated image"
-            />
-            <Button
-              size="icon"
-              variant="ghost"
-              className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-              onClick={handleDownload}
-            >
-              <Download className="h-4 w-4" />
-            </Button>
-          </>
-        ) : (
-          <div
-            className={cn("prose prose-sm", isAi ? "prose-invert" : "")}
-            dangerouslySetInnerHTML={{ __html: content.replace(/\n/g, '<br />') }}
-          />
-        )}
+        {renderContent()}
       </div>
     </div>
   );

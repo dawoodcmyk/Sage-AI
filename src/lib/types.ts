@@ -5,6 +5,7 @@ export type Message = {
   role: "user" | "ai";
   content: string;
   type: "text" | "image" | "loading";
+  imageDataUri?: string;
 };
 
 export type Conversation = {

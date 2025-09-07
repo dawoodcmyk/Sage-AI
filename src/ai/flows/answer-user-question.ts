@@ -13,6 +13,9 @@ import {z} from 'genkit';
 
 const AnswerUserQuestionInputSchema = z.object({
   question: z.string().describe('The question asked by the user.'),
+  imageDataUri: z.string().optional().describe(
+    "An optional image attached by the user, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+  ),
 });
 export type AnswerUserQuestionInput = z.infer<typeof AnswerUserQuestionInputSchema>;
 
@@ -47,6 +50,11 @@ const answerUserQuestionPrompt = ai.definePrompt({
   prompt: `You are an intelligent chatbot that answers user questions using information retrieved from internal knowledge sources.
 
   Use the 'knowledgeRetrieval' tool to get relevant information to answer the question comprehensively.  Reason about the retrieved information to formulate a well-structured and informative answer.
+
+  {{#if imageDataUri}}
+  The user has provided an image. Use it as the primary context for your answer.
+  Image: {{media url=imageDataUri}}
+  {{/if}}
 
   Question: {{{question}}}
 

@@ -10,7 +10,7 @@ export type AIResponse = {
   type: "text" | "image";
 };
 
-export async function getAiResponse(message: string): Promise<AIResponse> {
+export async function getAiResponse(message: string, imageDataUri?: string): Promise<AIResponse> {
   const imagineMatch = message.match(/^\/imagine\s+(.*)/s);
 
   let response: { content: string; type: "text" | "image" };
@@ -30,7 +30,7 @@ export async function getAiResponse(message: string): Promise<AIResponse> {
         response = { content: result.imageDataUri, type: "image" };
     }
     else {
-      const result = await answerUserQuestion({ question: correctedMessage });
+      const result = await answerUserQuestion({ question: correctedMessage, imageDataUri });
       response = { content: result.answer, type: "text" };
     }
   } catch (error) {
