@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Sparkles, LogIn, UserPlus } from "lucide-react";
+import { Sparkles, LogIn } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -33,33 +33,20 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 
-const signInSchema = z.object({
+const authSchema = z.object({
   email: z.string().email("Invalid email address."),
-  password: z.string().min(1, "Password is required."),
+  password: z.string().min(6, "Password must be at least 6 characters."),
 });
 
-const signUpSchema = z
-  .object({
-    email: z.string().email("Invalid email address."),
-    password: z.string().min(6, "Password must be at least 6 characters."),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match.",
-    path: ["confirmPassword"],
-  });
-
-type SignInFormValues = z.infer<typeof signInSchema>;
-type SignUpFormValues = z.infer<typeof signUpSchema>;
+type AuthFormValues = z.infer<typeof authSchema>;
 
 export default function LoginPage() {
-  const [isSigningUp, setIsSigningUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
-  const signInForm = useForm<SignInFormValues>({
-    resolver: zodResolver(signInSchema),
+  const form = useForm<AuthFormValues>({
+    resolver: zodResolver(authSchema),
     mode: "onSubmit",
     defaultValues: {
       email: "",
@@ -67,43 +54,39 @@ export default function LoginPage() {
     },
   });
 
-  const signUpForm = useForm<SignUpFormValues>({
-    resolver: zodResolver(signUpSchema),
-    mode: "onSubmit",
-    defaultValues: {
-      email: "",
-      password: "",
-      confirmPassword: "",
-    },
-  });
-
-  const handleSignIn: SubmitHandler<SignInFormValues> = async (data) => {
+  const handleAuth: SubmitHandler<AuthFormValues> = async (data) => {
     setIsLoading(true);
     try {
+      // First, try to sign in the user
       await signInWithEmailAndPassword(auth, data.email, data.password);
       router.push("/");
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Sign-in failed",
-        description: error.message,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSignUp: SubmitHandler<SignUpFormValues> = async (data) => {
-    setIsLoading(true);
-    try {
-      await createUserWithEmailAndPassword(auth, data.email, data.password);
-      router.push("/");
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Sign-up failed",
-        description: error.message,
-      });
+    } catch (signInError: any) {
+      // if user does not exist, try to sign them up
+      if (
+        signInError.code === "auth/user-not-found" ||
+        signInError.code === "auth/invalid-credential"
+      ) {
+        try {
+          await createUserWithEmailAndPassword(
+            auth,
+            data.email,
+            data.password
+          );
+          router.push("/");
+        } catch (signUpError: any) {
+          toast({
+            variant: "destructive",
+            title: "Authentication failed",
+            description: signUpError.message,
+          });
+        }
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Sign-in failed",
+          description: signInError.message,
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -118,143 +101,61 @@ export default function LoginPage() {
              <h1 className="text-3xl font-semibold">Sage</h1>
            </div>
           <CardTitle className="text-2xl">
-            {isSigningUp ? "Create an account" : "Welcome back"}
+            Welcome
           </CardTitle>
           <CardDescription>
-            {isSigningUp
-              ? "Enter your details to get started."
-              : "Sign in to access your chat history."}
+            Enter your credentials to sign in or create an account.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {isSigningUp ? (
-            <Form {...signUpForm}>
-              <form
-                onSubmit={signUpForm.handleSubmit(handleSignUp)}
-                className="space-y-4"
-              >
-                <FormField
-                  control={signUpForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="name@example.com"
-                          autoComplete="email"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={signUpForm.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="password"
-                          placeholder="••••••••"
-                          autoComplete="new-password"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={signUpForm.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Confirm Password</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="password"
-                          placeholder="••••••••"
-                          autoComplete="new-password"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Registering..." : "Register"}
-                  <UserPlus />
-                </Button>
-              </form>
-            </Form>
-          ) : (
-            <Form {...signInForm}>
-              <form
-                onSubmit={signInForm.handleSubmit(handleSignIn)}
-                className="space-y-4"
-              >
-                <FormField
-                  control={signInForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="name@example.com"
-                          autoComplete="email"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={signInForm.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="password"
-                          placeholder="••••••••"
-                          autoComplete="current-password"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Signing in..." : "Sign In"}
-                  <LogIn />
-                </Button>
-              </form>
-            </Form>
-          )}
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(handleAuth)}
+              className="space-y-4"
+            >
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="name@example.com"
+                        autoComplete="email"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="••••••••"
+                        autoComplete="current-password"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? "Authenticating..." : "Continue"}
+                <LogIn />
+              </Button>
+            </form>
+          </Form>
         </CardContent>
-        <CardFooter className="flex justify-center">
-          <Button
-            variant="link"
-            onClick={() => setIsSigningUp(!isSigningUp)}
-            disabled={isLoading}
-          >
-            {isSigningUp
-              ? "Already have an account? Sign In"
-              : "Don't have an account? Sign Up"}
-          </Button>
-        </CardFooter>
       </Card>
     </div>
   );
 }
-
-    
