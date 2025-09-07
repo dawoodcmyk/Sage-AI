@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Sparkles, MessageSquare, Plus, PanelLeft, Bot, Image as ImageIcon, Trash2 } from "lucide-react";
+import { Sparkles, MessageSquare, Plus, PanelLeft, Bot, Image as ImageIcon, Trash2, LogOut } from "lucide-react";
 import { type Message, type Conversation } from "@/lib/types";
 import { getAiResponse } from "@/app/actions";
 import { ChatInput } from "@/components/chat/chat-input";
@@ -15,7 +15,6 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarProvider,
   SidebarTrigger,
   SidebarMenuAction,
   SidebarFooter,
@@ -33,6 +32,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { useAuth } from "@/components/auth-provider";
+import { useRouter } from "next/navigation";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 const features = [
   {
@@ -51,26 +54,25 @@ const features = [
 
 
 export default function Home() {
+  const { user, isLoading: isAuthLoading } = useAuth();
+  const router = useRouter();
+
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [chatStarted, setChatStarted] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    let currentUserId = localStorage.getItem('anonymousUserId');
-    if (!currentUserId) {
-      currentUserId = crypto.randomUUID();
-      localStorage.setItem('anonymousUserId', currentUserId);
+    if (!isAuthLoading && !user) {
+      router.push("/login");
     }
-    setUserId(currentUserId);
-  }, []);
+  }, [user, isAuthLoading, router]);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!user) return;
 
-    const savedConversations = localStorage.getItem(`conversations_${userId}`);
-    const savedActiveId = localStorage.getItem(`activeConversationId_${userId}`);
+    const savedConversations = localStorage.getItem(`conversations_${user.uid}`);
+    const savedActiveId = localStorage.getItem(`activeConversationId_${user.uid}`);
 
     if (savedConversations) {
       const parsedConversations = JSON.parse(savedConversations);
@@ -88,37 +90,37 @@ export default function Home() {
     } else {
       handleNewConversation(false);
     }
-  }, [userId]);
+  }, [user]);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!user) return;
     if (conversations.length > 0) {
-      localStorage.setItem(`conversations_${userId}`, JSON.stringify(conversations));
+      localStorage.setItem(`conversations_${user.uid}`, JSON.stringify(conversations));
     } else {
-      localStorage.removeItem(`conversations_${userId}`);
+      localStorage.removeItem(`conversations_${user.uid}`);
     }
-  }, [conversations, userId]);
+  }, [conversations, user]);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!user) return;
     if (activeConversationId) {
-      localStorage.setItem(`activeConversationId_${userId}`, activeConversationId);
+      localStorage.setItem(`activeConversationId_${user.uid}`, activeConversationId);
     } else {
-      localStorage.removeItem(`activeConversationId_${userId}`);
+      localStorage.removeItem(`activeConversationId_${user.uid}`);
     }
-  }, [activeConversationId, userId]);
+  }, [activeConversationId, user]);
 
   const activeConversation = useMemo(() => {
     return conversations.find((c) => c.id === activeConversationId);
   }, [conversations, activeConversationId]);
 
   const handleNewConversation = (startChat: boolean = true) => {
-    if (!userId) return;
+    if (!user) return;
     const newConversation: Conversation = {
       id: crypto.randomUUID(),
       title: "New Chat",
       messages: [],
-      userId: userId,
+      userId: user.uid,
     };
     setConversations((prev) => [newConversation, ...prev]);
     setActiveConversationId(newConversation.id);
@@ -195,7 +197,7 @@ export default function Home() {
   };
 
   const handleDeleteConversation = (conversationId: string) => {
-    if (!userId) return;
+    if (!user) return;
     setConversations(prev => {
       const newConversations = prev.filter(c => c.id !== conversationId);
       if (activeConversationId === conversationId) {
@@ -208,17 +210,22 @@ export default function Home() {
         }
       }
       if (newConversations.length === 0) {
-        localStorage.removeItem(`conversations_${userId}`);
+        localStorage.removeItem(`conversations_${user.uid}`);
         handleNewConversation(false);
       }
       return newConversations;
     });
   };
 
+   const handleSignOut = async () => {
+    await signOut(auth);
+    router.push('/login');
+  };
+
   const messages = activeConversation?.messages ?? [];
   const showWelcome = messages.length === 0 && !chatStarted && conversations.length <= 1 && (conversations[0]?.messages.length === 0 || !conversations[0]);
 
-  if (!userId) {
+  if (isAuthLoading || !user) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Bot className="h-12 w-12 animate-spin" />
@@ -324,6 +331,12 @@ export default function Home() {
             ))}
           </SidebarMenu>
         </SidebarContent>
+        <SidebarFooter>
+          <Button variant="ghost" className="justify-start" onClick={handleSignOut}>
+            <LogOut className="w-4 h-4 mr-2" />
+            <span>Sign Out</span>
+          </Button>
+        </SidebarFooter>
       </Sidebar>
       <SidebarInset>
         <div className="flex flex-col h-screen">
@@ -349,3 +362,5 @@ export default function Home() {
 
   return showWelcome ? <WelcomeScreen /> : <ChatInterface />;
 }
+
+    
