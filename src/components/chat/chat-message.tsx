@@ -58,7 +58,7 @@ export function ChatMessage({ message }: { message: Message }) {
 
     if (type === "image") {
         return (
-          <div className="flex items-center gap-4">
+          <div className="relative group">
             <Image
                 src={content}
                 alt="Generated image"
@@ -70,7 +70,7 @@ export function ChatMessage({ message }: { message: Message }) {
             <Button
                 size="icon"
                 variant="ghost"
-                className="shrink-0"
+                className="absolute top-2 right-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity bg-background/50 hover:bg-background/75"
                 onClick={handleDownload}
             >
                 <Download className="h-4 w-4" />
