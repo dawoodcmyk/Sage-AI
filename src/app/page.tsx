@@ -18,6 +18,7 @@ import {
   SidebarTrigger,
   SidebarMenuAction,
   SidebarFooter,
+  SidebarProvider,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
