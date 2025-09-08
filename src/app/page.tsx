@@ -46,12 +46,6 @@ const features = [
     example: "What is the meaning of life?",
   },
   {
-    icon: <ImageIcon className="w-6 h-6" />,
-    title: "Image Generation",
-    description: "Bring your ideas to life by generating images from text descriptions.",
-    example: "/imagine A futuristic city at sunset",
-  },
-  {
     icon: <Mic className="w-6 h-6" />,
     title: "Voice Messages",
     description: "Record your voice and have it automatically transcribed into text.",
