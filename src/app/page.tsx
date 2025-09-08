@@ -254,7 +254,7 @@ export default function Home() {
         <div className="flex-1 flex items-center justify-center">
           <div className="max-w-4xl mx-auto p-8">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold tracking-tight">Your intelligent chat assistant</h2>
+              <h2 className="text-3xl font-bold tracking-tight">AI intelligent chat assistant</h2>
               <p className="text-muted-foreground mt-2">Ask me anything, or try one of the features below.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

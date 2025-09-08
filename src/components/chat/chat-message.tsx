@@ -81,7 +81,7 @@ export function ChatMessage({ message }: { message: Message }) {
     return (
       <div className="flex items-start gap-4">
         <Avatar className="h-9 w-9 border">
-          <AvatarImage src="/bot-avatar.png" alt="Sage" />
+          <AvatarImage src="" alt="Sage" />
           <AvatarFallback>
             <Bot className="h-5 w-5" />
           </AvatarFallback>
@@ -173,7 +173,7 @@ export function ChatMessage({ message }: { message: Message }) {
       <Avatar className={cn("h-9 w-9 border", isAi ? "" : "order-2")}>
         {isAi ? (
           <>
-            <AvatarImage src="/bot-avatar.png" alt="Sage" />
+            <AvatarImage src="" alt="Sage" />
             <AvatarFallback>
               <Bot className="h-5 w-5 text-foreground" />
             </AvatarFallback>

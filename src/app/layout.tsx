@@ -10,7 +10,7 @@ const font = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
 export const metadata: Metadata = {
   title: 'Sage',
-  description: 'An intelligent chat assistant',
+  description: 'AI intelligent chat assistant',
 };
 
 export default function RootLayout({
