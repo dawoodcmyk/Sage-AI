@@ -1,7 +1,7 @@
 'use server';
 
 /**
- * @fileOverview This file defines a Genkit flow for answering user questions using an internal tool for knowledge retrieval and reasoning.
+ * @fileOverview This file defines a Genkit flow for answering user questions using internal tools for knowledge retrieval and web browsing.
  *
  * - answerUserQuestion - A function that accepts a question string and returns an answer string.
  * - AnswerUserQuestionInput - The input type for the answerUserQuestion function.
@@ -28,37 +28,43 @@ export async function answerUserQuestion(input: AnswerUserQuestionInput): Promis
   return answerUserQuestionFlow(input);
 }
 
-const knowledgeRetrievalTool = ai.defineTool({
-  name: 'knowledgeRetrieval',
-  description: 'Retrieves information from internal knowledge sources to answer user questions comprehensively.',
-  inputSchema: z.object({
-    query: z.string().describe('The search query to retrieve relevant information.'),
-  }),
-  outputSchema: z.string().describe('The retrieved information from the knowledge sources.'),
-}, async (input) => {
-  // Placeholder implementation for knowledge retrieval. Replace with actual implementation.
-  // This could involve querying a database, calling an internal API, etc.
-  // For now, just return a canned response.
-  return `Retrieved information: This is a canned response for the query: ${input.query}.  A real implementation would fetch data.`;
-});
+const webBrowserTool = ai.defineTool(
+  {
+    name: 'webBrowser',
+    description: 'A tool that can browse the web to answer user questions. This tool is expensive and should only be used when you cannot answer the question with your existing knowledge.',
+    inputSchema: z.object({
+      query: z.string(),
+    }),
+    outputSchema: z.string(),
+  },
+  async (input) => {
+    console.log(`WebBrowserTool: Searching for "${input.query}"`);
+    const searchResponse = await ai.generate({
+      model: 'googleai/gemini-2.5-flash',
+      prompt: `Please search for the following query and provide a concise answer: ${input.query}`,
+    });
+    return searchResponse.text;
+  }
+);
 
 const answerUserQuestionPrompt = ai.definePrompt({
   name: 'answerUserQuestionPrompt',
   input: {schema: AnswerUserQuestionInputSchema},
   output: {schema: AnswerUserQuestionOutputSchema},
-  tools: [knowledgeRetrievalTool],
-  prompt: `You are an intelligent chatbot that answers user questions using information retrieved from internal knowledge sources.
+  tools: [webBrowserTool],
+  prompt: `You are an intelligent chatbot that answers user questions.
 
-  Use the 'knowledgeRetrieval' tool to get relevant information to answer the question comprehensively.  Reason about the retrieved information to formulate a well-structured and informative answer.
+If you don't know the answer to a question, use the 'webBrowser' tool to search the web for information.
+When using the webBrowserTool, provide a concise and helpful answer based on the search results.
 
-  {{#if imageDataUri}}
-  The user has provided an image. Use it as the primary context for your answer.
-  Image: {{media url=imageDataUri}}
-  {{/if}}
+{{#if imageDataUri}}
+The user has provided an image. Use it as the primary context for your answer.
+Image: {{media url=imageDataUri}}
+{{/if}}
 
-  Question: {{{question}}}
+Question: {{{question}}}
 
-  Answer:`, // Ensure that the prompt ends with "Answer:"
+Answer:`,
 });
 
 const answerUserQuestionFlow = ai.defineFlow(
