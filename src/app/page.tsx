@@ -46,6 +46,12 @@ const features = [
     example: "What is the meaning of life?",
   },
   {
+    icon: <ImageIcon className="w-6 h-6" />,
+    title: "Image Generation",
+    description: "Create stunning visuals from text descriptions. Just type `/imagine` followed by your prompt.",
+    example: "/imagine A futuristic city at sunset",
+  },
+  {
     icon: <Mic className="w-6 h-6" />,
     title: "Voice Messages",
     description: "Record your voice and have it automatically transcribed into text.",
@@ -251,7 +257,7 @@ export default function Home() {
               <h2 className="text-3xl font-bold tracking-tight">Your intelligent chat assistant</h2>
               <p className="text-muted-foreground mt-2">Ask me anything, or try one of the features below.</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {features.map((feature, index) => (
                 <Card key={index} className="bg-secondary/50 hover:bg-secondary transition-colors">
                   <CardHeader className="flex flex-row items-center gap-4">
@@ -371,3 +377,5 @@ export default function Home() {
 
   return showWelcome ? <WelcomeScreen /> : <ChatInterface />;
 }
+
+    
