@@ -2,15 +2,21 @@
 "use client";
 
 import Image from "next/image";
-import { Bot, User, Download, FileAudio } from "lucide-react";
+import { Bot, User, Download, FileAudio, Copy, Volume2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type Message } from "@/lib/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+import { speakText } from "@/app/actions";
 
 export function ChatMessage({ message }: { message: Message }) {
   const { role, content, type, mediaDataUri } = message;
+  const { toast } = useToast();
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
 
   const isAi = role === "ai";
   const isAudio = mediaDataUri?.startsWith('data:audio');
@@ -22,6 +28,42 @@ export function ChatMessage({ message }: { message: Message }) {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+  
+  const handleCopy = () => {
+    navigator.clipboard.writeText(content).then(() => {
+        toast({
+            description: "Copied to clipboard!",
+        });
+    });
+  };
+
+  const handleSpeak = async () => {
+     if (isSpeaking && audio) {
+        audio.pause();
+        audio.currentTime = 0;
+        setIsSpeaking(false);
+        return;
+    }
+    
+    setIsSpeaking(true);
+    try {
+        const { audioDataUri } = await speakText(content);
+        const newAudio = new Audio(audioDataUri);
+        setAudio(newAudio);
+        newAudio.play();
+        newAudio.onended = () => {
+            setIsSpeaking(false);
+        };
+    } catch (error) {
+        console.error("Error generating speech", error);
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'Could not generate audio.',
+        });
+        setIsSpeaking(false);
+    }
   };
 
   if (type === "loading") {
@@ -89,11 +131,25 @@ export function ChatMessage({ message }: { message: Message }) {
         );
     }
     
+    const plainTextContent = content.replace(/<br\s*\/?>/gi, '\n');
+
     return (
-      <div
-        className={cn("prose prose-sm", isAi ? "prose-invert" : "")}
-        dangerouslySetInnerHTML={{ __html: content.replace(/\n/g, '<br />') }}
-      />
+      <div className="space-y-4">
+         <div
+            className={cn("prose prose-sm max-w-none", isAi ? "prose-invert" : "")}
+            dangerouslySetInnerHTML={{ __html: content.replace(/\n/g, '<br />') }}
+        />
+        {isAi && type === 'text' && (
+            <div className="flex items-center gap-2">
+                <Button size="icon" variant="ghost" onClick={handleCopy} className="h-7 w-7">
+                    <Copy className="h-4 w-4" />
+                </Button>
+                 <Button size="icon" variant="ghost" onClick={handleSpeak} disabled={isSpeaking} className="h-7 w-7">
+                   {isSpeaking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Volume2 className="h-4 w-4" />}
+                </Button>
+            </div>
+        )}
+      </div>
     );
   };
 

@@ -4,6 +4,7 @@
 import { answerUserQuestion } from "@/ai/flows/answer-user-question";
 import { generateImage } from "@/ai/flows/generate-image";
 import { correctText } from "@/ai/flows/correct-text";
+import { generateSpeech, type GenerateSpeechOutput } from "@/ai/flows/generate-speech";
 
 export type AIResponse = {
   role: "ai";
@@ -47,4 +48,8 @@ export async function getAiResponse(message: string, mediaDataUri?: string): Pro
     role: "ai",
     ...response,
   };
+}
+
+export async function speakText(text: string): Promise<GenerateSpeechOutput> {
+    return generateSpeech({ text });
 }
