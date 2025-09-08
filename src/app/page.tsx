@@ -87,17 +87,15 @@ export default function Home() {
         setConversations(parsedConversations);
         if (savedActiveId && parsedConversations.some((c: Conversation) => c.id === savedActiveId)) {
           setActiveConversationId(savedActiveId);
-        } else {
+        } else if (parsedConversations.length > 0) {
           setActiveConversationId(parsedConversations[0].id);
         }
-        setChatStarted(true);
-      } else {
-        handleNewConversation(false);
       }
     } else {
       handleNewConversation(false);
     }
   }, [user]);
+
 
   useEffect(() => {
     if (!user) return;
@@ -232,7 +230,8 @@ export default function Home() {
   };
 
   const messages = activeConversation?.messages ?? [];
-  const showWelcome = messages.length === 0 && !chatStarted && conversations.length <= 1 && (conversations[0]?.messages.length === 0 || !conversations[0]);
+  const showWelcome = !chatStarted;
+
 
   if (isAuthLoading || !user) {
     return (
@@ -283,7 +282,7 @@ export default function Home() {
               ))}
             </div>
             <div className="text-center mt-12">
-                <Button size="lg" onClick={() => setChatStarted(true)}>
+                <Button size="lg" onClick={() => handleNewConversation(true)}>
                   <Sparkles className="w-5 h-5 mr-2" />
                   Start New Chat
                 </Button>
