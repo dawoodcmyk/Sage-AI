@@ -17,6 +17,7 @@ export function ChatMessage({ message }: { message: Message }) {
   const { toast } = useToast();
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
+  const [cachedAudioDataUri, setCachedAudioDataUri] = useState<string | null>(null);
 
   const isAi = role === "ai";
   const isAudio = mediaDataUri?.startsWith('data:audio');
@@ -48,7 +49,13 @@ export function ChatMessage({ message }: { message: Message }) {
     
     setIsSpeaking(true);
     try {
-        const { audioDataUri } = await speakText(content);
+        let audioDataUri = cachedAudioDataUri;
+        if (!audioDataUri) {
+            const result = await speakText(content);
+            audioDataUri = result.audioDataUri;
+            setCachedAudioDataUri(audioDataUri);
+        }
+
         const newAudio = new Audio(audioDataUri);
         setAudio(newAudio);
         newAudio.play();
@@ -144,7 +151,7 @@ export function ChatMessage({ message }: { message: Message }) {
                 <Button size="icon" variant="ghost" onClick={handleCopy} className="h-7 w-7">
                     <Copy className="h-4 w-4" />
                 </Button>
-                 <Button size="icon" variant="ghost" onClick={handleSpeak} disabled={isSpeaking} className="h-7 w-7">
+                 <Button size="icon" variant="ghost" onClick={handleSpeak} className="h-7 w-7">
                    {isSpeaking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Volume2 className="h-4 w-4" />}
                 </Button>
             </div>
