@@ -15,7 +15,8 @@ import { speakText } from "@/app/actions";
 export function ChatMessage({ message }: { message: Message }) {
   const { role, content, type, mediaDataUri } = message;
   const { toast } = useToast();
-  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
   const [cachedAudioDataUri, setCachedAudioDataUri] = useState<string | null>(null);
 
@@ -40,27 +41,29 @@ export function ChatMessage({ message }: { message: Message }) {
   };
 
   const handleSpeak = async () => {
-     if (isSpeaking && audio) {
+     if (isPlaying && audio) {
         audio.pause();
         audio.currentTime = 0;
-        setIsSpeaking(false);
+        setIsPlaying(false);
         return;
     }
     
-    setIsSpeaking(true);
     try {
         let audioDataUri = cachedAudioDataUri;
         if (!audioDataUri) {
+            setIsGenerating(true);
             const result = await speakText(content);
             audioDataUri = result.audioDataUri;
             setCachedAudioDataUri(audioDataUri);
+            setIsGenerating(false);
         }
 
-        const newAudio = new Audio(audioDataUri);
+        const newAudio = new Audio(audioDataUri!);
         setAudio(newAudio);
         newAudio.play();
+        setIsPlaying(true);
         newAudio.onended = () => {
-            setIsSpeaking(false);
+            setIsPlaying(false);
         };
     } catch (error) {
         console.error("Error generating speech", error);
@@ -69,7 +72,8 @@ export function ChatMessage({ message }: { message: Message }) {
             title: 'Error',
             description: 'Could not generate audio.',
         });
-        setIsSpeaking(false);
+        setIsGenerating(false);
+        setIsPlaying(false);
     }
   };
 
@@ -151,8 +155,8 @@ export function ChatMessage({ message }: { message: Message }) {
                 <Button size="icon" variant="ghost" onClick={handleCopy} className="h-7 w-7">
                     <Copy className="h-4 w-4" />
                 </Button>
-                 <Button size="icon" variant="ghost" onClick={handleSpeak} className="h-7 w-7">
-                   {isSpeaking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Volume2 className="h-4 w-4" />}
+                 <Button size="icon" variant="ghost" onClick={handleSpeak} disabled={isGenerating} className="h-7 w-7">
+                   {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Volume2 className="h-4 w-4" />}
                 </Button>
             </div>
         )}
