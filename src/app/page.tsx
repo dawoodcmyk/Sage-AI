@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Sparkles, MessageSquare, Plus, PanelLeft, Bot, Image as ImageIcon, Trash2, LogOut } from "lucide-react";
+import { Sparkles, MessageSquare, Plus, PanelLeft, Bot, Image as ImageIcon, Trash2, LogOut, Mic } from "lucide-react";
 import { type Message, type Conversation } from "@/lib/types";
 import { getAiResponse } from "@/app/actions";
 import { ChatInput } from "@/components/chat/chat-input";
@@ -51,6 +51,12 @@ const features = [
     description: "Bring your ideas to life by generating images from text descriptions.",
     example: "/imagine A futuristic city at sunset",
   },
+  {
+    icon: <Mic className="w-6 h-6" />,
+    title: "Voice Messages",
+    description: "Record your voice and have it automatically transcribed into text.",
+    example: "What's the weather like tomorrow?",
+  }
 ];
 
 
@@ -128,19 +134,21 @@ export default function Home() {
     setChatStarted(startChat);
   };
 
-  const handleSendMessage = async (messageText: string, imageDataUri?: string) => {
-    if ((!messageText.trim() && !imageDataUri) || !activeConversationId) return;
+  const handleSendMessage = async (messageText: string, mediaDataUri?: string) => {
+    if ((!messageText.trim() && !mediaDataUri) || !activeConversationId) return;
 
     if (!chatStarted) {
       setChatStarted(true);
     }
+    
+    const isAudio = mediaDataUri?.startsWith('data:audio');
 
     const userMessage: Message = {
       id: crypto.randomUUID(),
       role: "user",
-      content: messageText,
-      type: imageDataUri ? "image" : "text",
-      imageDataUri: imageDataUri
+      content: isAudio ? `(Audio message)` : messageText,
+      type: mediaDataUri ? "media" : "text",
+      mediaDataUri: mediaDataUri
     };
 
     const loadingMessage: Message = {
@@ -153,7 +161,7 @@ export default function Home() {
     setConversations((prev) =>
       prev.map((c) => {
         if (c.id === activeConversationId) {
-          const newTitle = c.messages.length === 0 ? messageText.substring(0, 30) : c.title;
+          const newTitle = c.messages.length === 0 ? (isAudio ? 'Voice Note' : messageText.substring(0, 30)) : c.title;
           return {
             ...c,
             title: newTitle,
@@ -166,7 +174,7 @@ export default function Home() {
     setIsLoading(true);
 
     try {
-      const aiResponse = await getAiResponse(messageText, imageDataUri);
+      const aiResponse = await getAiResponse(messageText, mediaDataUri);
       setConversations((prev) =>
         prev.map((c) => {
           if (c.id === activeConversationId) {
@@ -259,10 +267,16 @@ export default function Home() {
                   <CardContent>
                     <p className="text-sm text-muted-foreground">{feature.description}</p>
                       <button
-                        onClick={() => handleSendMessage(feature.example)}
+                        onClick={() => {
+                          if (feature.title === 'Voice Messages') {
+                            setChatStarted(true);
+                          } else {
+                            handleSendMessage(feature.example)
+                          }
+                        }}
                         className="text-sm text-primary/80 hover:text-primary mt-4 text-left w-full"
                       >
-                        Try: "{feature.example}"
+                       {feature.title === 'Voice Messages' ? 'Try Voice Messages' : `Try: "${feature.example}"`}
                       </button>
                   </CardContent>
                 </Card>
@@ -363,5 +377,3 @@ export default function Home() {
 
   return showWelcome ? <WelcomeScreen /> : <ChatInterface />;
 }
-
-    

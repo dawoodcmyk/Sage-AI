@@ -1,3 +1,4 @@
+
 "use server";
 
 import { answerUserQuestion } from "@/ai/flows/answer-user-question";
@@ -10,13 +11,15 @@ export type AIResponse = {
   type: "text" | "image";
 };
 
-export async function getAiResponse(message: string, imageDataUri?: string): Promise<AIResponse> {
+export async function getAiResponse(message: string, mediaDataUri?: string): Promise<AIResponse> {
   const imagineMatch = message.match(/^\/imagine\s+(.*)/s);
 
   let response: { content: string; type: "text" | "image" };
+  const isAudio = mediaDataUri?.startsWith('data:audio');
+  const finalMessage = isAudio ? "Transcribe the following audio and answer any questions within it. If it's only audio, just provide the transcription." : message;
 
   try {
-    const correctionResult = await correctText({ text: message });
+    const correctionResult = await correctText({ text: finalMessage });
     const correctedMessage = correctionResult.correctedText;
 
     if (imagineMatch) {
@@ -30,7 +33,7 @@ export async function getAiResponse(message: string, imageDataUri?: string): Pro
         response = { content: result.imageDataUri, type: "image" };
     }
     else {
-      const result = await answerUserQuestion({ question: correctedMessage, imageDataUri });
+      const result = await answerUserQuestion({ question: correctedMessage, mediaDataUri });
       response = { content: result.answer, type: "text" };
     }
   } catch (error) {

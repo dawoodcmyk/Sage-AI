@@ -1,11 +1,12 @@
+
 import type { User } from "firebase/auth";
 
 export type Message = {
   id: string;
   role: "user" | "ai";
   content: string;
-  type: "text" | "image" | "loading";
-  imageDataUri?: string;
+  type: "text" | "image" | "loading" | "media";
+  mediaDataUri?: string;
 };
 
 export type Conversation = {

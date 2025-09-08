@@ -1,7 +1,8 @@
+
 "use client";
 
 import Image from "next/image";
-import { Bot, User, Download } from "lucide-react";
+import { Bot, User, Download, FileAudio } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type Message } from "@/lib/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -9,9 +10,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 
 export function ChatMessage({ message }: { message: Message }) {
-  const { role, content, type, imageDataUri } = message;
+  const { role, content, type, mediaDataUri } = message;
 
   const isAi = role === "ai";
+  const isAudio = mediaDataUri?.startsWith('data:audio');
 
   const handleDownload = () => {
     const link = document.createElement("a");
@@ -40,11 +42,19 @@ export function ChatMessage({ message }: { message: Message }) {
   }
 
   const renderContent = () => {
-    if (role === 'user' && imageDataUri) {
-      return (
+    if (role === 'user' && type === 'media') {
+       if (isAudio) {
+         return (
+            <div className="flex items-center gap-2">
+              <FileAudio className="h-5 w-5" /> 
+              <span>{content}</span>
+            </div>
+         )
+       }
+       return (
         <div className="space-y-2">
           <Image
-            src={imageDataUri}
+            src={mediaDataUri!}
             alt="User uploaded image"
             width={400}
             height={400}

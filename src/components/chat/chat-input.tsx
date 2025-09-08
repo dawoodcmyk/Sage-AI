@@ -1,10 +1,11 @@
+
 "use client";
 
-import { useRef, type FormEvent, useState } from "react";
+import { useRef, type FormEvent, useState, useEffect } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "../ui/textarea";
-import { SendHorizontal, Loader2, CornerDownLeft, Paperclip, X } from "lucide-react";
+import { SendHorizontal, Loader2, CornerDownLeft, Paperclip, X, Mic, StopCircle } from "lucide-react";
 
 type ChatInputProps = {
   onSendMessage: (message: string, imageDataUri?: string) => Promise<void>;
@@ -18,10 +19,13 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if ((message.trim() || imagePreview) && !isLoading) {
-      await onSendMessage(message, imagePreview || undefined);
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
+  const handleSendMessageWithText = async (text: string, image?: string) => {
+    if ((text.trim() || image) && !isLoading) {
+      await onSendMessage(text, image || undefined);
       setMessage("");
       if (inputRef.current) {
         inputRef.current.style.height = 'auto';
@@ -31,6 +35,11 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
         fileInputRef.current.value = "";
       }
     }
+  }
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    handleSendMessageWithText(message, imagePreview);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -64,7 +73,55 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
     }
   }
 
-  const isButtonDisabled = isLoading || (!message.trim() && !imagePreview);
+  const startRecording = async () => {
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorderRef.current = new MediaRecorder(stream);
+        audioChunksRef.current = [];
+
+        mediaRecorderRef.current.ondataavailable = (event) => {
+          audioChunksRef.current.push(event.data);
+        };
+
+        mediaRecorderRef.current.onstop = () => {
+          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const audioDataUri = reader.result as string;
+            // The prompt for transcription will be empty, as the audio is the primary input.
+            handleSendMessageWithText("", audioDataUri); 
+          };
+          reader.readAsDataURL(audioBlob);
+           // Stop all media tracks
+          stream.getTracks().forEach(track => track.stop());
+        };
+
+        mediaRecorderRef.current.start();
+        setIsRecording(true);
+      } catch (err) {
+        console.error("Error accessing microphone:", err);
+        // You might want to show a toast notification here
+      }
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const toggleRecording = () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  };
+
+  const isSendButtonDisabled = isLoading || (!message.trim() && !imagePreview);
 
   return (
     <div className="relative max-w-3xl mx-auto py-4">
@@ -82,8 +139,8 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
             ref={inputRef}
             value={message}
             placeholder="Ask Sage anything, or attach an image..."
-            disabled={isLoading}
-            className="pr-24 resize-none max-h-48"
+            disabled={isLoading || isRecording}
+            className="pr-36 resize-none max-h-48"
             aria-label="Chat input"
             rows={1}
             onKeyDown={handleKeyDown}
@@ -91,13 +148,16 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
           />
           <div className="absolute inset-y-0 right-0 flex items-center pr-3">
              <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
-             <Button type="button" size="icon" variant="ghost" onClick={() => fileInputRef.current?.click()} disabled={isLoading} aria-label="Attach file" className="mr-1">
+             <Button type="button" size="icon" variant="ghost" onClick={() => fileInputRef.current?.click()} disabled={isLoading || isRecording} aria-label="Attach file" className="mr-1">
                 <Paperclip className="h-4 w-4" />
+             </Button>
+             <Button type="button" size="icon" variant="ghost" onClick={toggleRecording} disabled={isLoading} aria-label={isRecording ? "Stop recording" : "Start recording"} className="mr-1">
+              {isRecording ? <StopCircle className="h-4 w-4 text-red-500" /> : <Mic className="h-4 w-4" />}
              </Button>
              <Button
               type="submit"
               size="icon"
-              disabled={isButtonDisabled}
+              disabled={isSendButtonDisabled}
               aria-label="Send message"
               className="shrink-0 h-8 w-8"
             >

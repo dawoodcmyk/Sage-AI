@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -13,8 +14,8 @@ import {z} from 'genkit';
 
 const AnswerUserQuestionInputSchema = z.object({
   question: z.string().describe('The question asked by the user.'),
-  imageDataUri: z.string().optional().describe(
-    "An optional image attached by the user, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+  mediaDataUri: z.string().optional().describe(
+    "An optional image or audio file attached by the user, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
   ),
 });
 export type AnswerUserQuestionInput = z.infer<typeof AnswerUserQuestionInputSchema>;
@@ -54,12 +55,13 @@ const answerUserQuestionPrompt = ai.definePrompt({
   tools: [webBrowserTool],
   prompt: `You are an intelligent chatbot that answers user questions.
 
+If the user provides an audio file, your primary task is to transcribe it. If there's a question in the audio, answer it. If not, just provide the transcription.
 If you don't know the answer to a question, use the 'webBrowser' tool to search the web for information.
 When using the webBrowserTool, provide a concise and helpful answer based on the search results.
 
-{{#if imageDataUri}}
-The user has provided an image. Use it as the primary context for your answer.
-Image: {{media url=imageDataUri}}
+{{#if mediaDataUri}}
+The user has provided an image or audio. Use it as the primary context for your answer.
+Media: {{media url=mediaDataUri}}
 {{/if}}
 
 Question: {{{question}}}
