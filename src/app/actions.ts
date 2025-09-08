@@ -12,7 +12,7 @@ export type AIResponse = {
   type: "text" | "image";
 };
 
-export async function getAiResponse(message: string, mediaDataUri?: string): Promise<AIResponse> {
+export async function getAiResponse(message: string, mediaDataUri?: string, deepThink?: boolean): Promise<AIResponse> {
   const imagineMatch = message.match(/^\/imagine\s+(.*)/s);
 
   let response: { content: string; type: "text" | "image" };
@@ -34,7 +34,7 @@ export async function getAiResponse(message: string, mediaDataUri?: string): Pro
         response = { content: result.imageDataUri, type: "image" };
     }
     else {
-      const result = await answerUserQuestion({ question: correctedMessage, mediaDataUri });
+      const result = await answerUserQuestion({ question: correctedMessage, mediaDataUri, deepThink });
       response = { content: result.answer, type: "text" };
     }
   } catch (error) {

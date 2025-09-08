@@ -17,6 +17,7 @@ const AnswerUserQuestionInputSchema = z.object({
   mediaDataUri: z.string().optional().describe(
     "An optional image or audio file attached by the user, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
   ),
+  deepThink: z.boolean().optional().describe('Whether to use a more powerful model for a more thoughtful response.'),
 });
 export type AnswerUserQuestionInput = z.infer<typeof AnswerUserQuestionInputSchema>;
 
@@ -75,8 +76,9 @@ const answerUserQuestionFlow = ai.defineFlow(
     inputSchema: AnswerUserQuestionInputSchema,
     outputSchema: AnswerUserQuestionOutputSchema,
   },
-  async input => {
-    const {output} = await answerUserQuestionPrompt(input);
+  async (input) => {
+    const model = input.deepThink ? 'googleai/gemini-1.5-pro-latest' : 'googleai/gemini-2.5-flash';
+    const {output} = await answerUserQuestionPrompt(input, {model});
     return output!;
   }
 );

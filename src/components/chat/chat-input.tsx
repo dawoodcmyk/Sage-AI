@@ -5,10 +5,11 @@ import { useRef, type FormEvent, useState, useEffect } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "../ui/textarea";
-import { SendHorizontal, Loader2, CornerDownLeft, Paperclip, X, Mic, StopCircle } from "lucide-react";
+import { SendHorizontal, Loader2, CornerDownLeft, Paperclip, X, Mic, StopCircle, Brain } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type ChatInputProps = {
-  onSendMessage: (message: string, imageDataUri?: string) => Promise<void>;
+  onSendMessage: (message: string, imageDataUri?: string, deepThink?: boolean) => Promise<void>;
   isLoading: boolean;
 };
 
@@ -23,9 +24,11 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
+  const [deepThink, setDeepThink] = useState(false);
+
   const handleSendMessageWithText = async (text: string, image?: string) => {
     if ((text.trim() || image) && !isLoading) {
-      await onSendMessage(text, image || undefined);
+      await onSendMessage(text, image || undefined, deepThink);
       setMessage("");
       if (inputRef.current) {
         inputRef.current.style.height = 'auto';
@@ -34,6 +37,7 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
+      setDeepThink(false); // Reset after sending
     }
   }
 
@@ -121,6 +125,10 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
     }
   };
 
+  const toggleDeepThink = () => {
+    setDeepThink(prev => !prev);
+  }
+
   const isSendButtonDisabled = isLoading || (!message.trim() && !imagePreview);
 
   return (
@@ -138,9 +146,9 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
           <Textarea
             ref={inputRef}
             value={message}
-            placeholder="Ask Sage anything, or attach an image..."
+            placeholder={deepThink ? "Deep thinking is active..." : "Ask Sage anything, or attach an image..."}
             disabled={isLoading || isRecording}
-            className="pr-36 resize-none max-h-48"
+            className={cn("pr-48 resize-none max-h-48", deepThink && "border-purple-500 focus-visible:ring-purple-500")}
             aria-label="Chat input"
             rows={1}
             onKeyDown={handleKeyDown}
@@ -154,6 +162,17 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
              <Button type="button" size="icon" variant="ghost" onClick={toggleRecording} disabled={isLoading} aria-label={isRecording ? "Stop recording" : "Start recording"} className="mr-1">
               {isRecording ? <StopCircle className="h-4 w-4 text-red-500" /> : <Mic className="h-4 w-4" />}
              </Button>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={toggleDeepThink}
+              disabled={isLoading || isRecording}
+              aria-label="Toggle Deep Thinking"
+              className={cn("mr-1", deepThink && "text-purple-500")}
+            >
+              <Brain className="h-4 w-4" />
+            </Button>
              <Button
               type="submit"
               size="icon"

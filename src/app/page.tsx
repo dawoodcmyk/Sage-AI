@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Sparkles, MessageSquare, Plus, PanelLeft, Bot, Image as ImageIcon, Trash2, LogOut, Mic } from "lucide-react";
+import { Sparkles, MessageSquare, Plus, PanelLeft, Bot, ImageIcon, Trash2, LogOut, Mic, Brain } from "lucide-react";
 import { type Message, type Conversation } from "@/lib/types";
 import { getAiResponse } from "@/app/actions";
 import { ChatInput } from "@/components/chat/chat-input";
@@ -44,6 +44,12 @@ const features = [
     title: "Intelligent Chat",
     description: "Ask complex questions, get thoughtful answers, and explore topics in depth.",
     example: "What is the meaning of life?",
+  },
+  {
+    icon: <Brain className="w-6 h-6" />,
+    title: "Deep Thinking",
+    description: "Use a more powerful AI model for in-depth, thoughtful, and creative responses.",
+    example: "Write a short story about a robot who discovers music.",
   },
   {
     icon: <ImageIcon className="w-6 h-6" />,
@@ -132,7 +138,7 @@ export default function Home() {
     setChatStarted(startChat);
   };
 
-  const handleSendMessage = async (messageText: string, mediaDataUri?: string) => {
+  const handleSendMessage = async (messageText: string, mediaDataUri?: string, deepThink?: boolean) => {
     if ((!messageText.trim() && !mediaDataUri) || !activeConversationId) return;
 
     if (!chatStarted) {
@@ -172,7 +178,7 @@ export default function Home() {
     setIsLoading(true);
 
     try {
-      const aiResponse = await getAiResponse(messageText, mediaDataUri);
+      const aiResponse = await getAiResponse(messageText, mediaDataUri, deepThink);
       setConversations((prev) =>
         prev.map((c) => {
           if (c.id === activeConversationId) {
@@ -256,7 +262,7 @@ export default function Home() {
               <h2 className="text-3xl font-bold tracking-tight">AI intelligent chat assistant</h2>
               <p className="text-muted-foreground mt-2">Ask me anything, or try one of the features below.</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {features.map((feature, index) => (
                 <Card key={index} className="bg-secondary/50 hover:bg-secondary transition-colors">
                   <CardHeader className="flex flex-row items-center gap-4">
@@ -267,7 +273,7 @@ export default function Home() {
                     <p className="text-sm text-muted-foreground">{feature.description}</p>
                       <button
                         onClick={() => {
-                          if (feature.title === 'Voice Messages') {
+                          if (feature.title === 'Voice Messages' || feature.title === 'Deep Thinking') {
                             setChatStarted(true);
                           } else {
                             handleSendMessage(feature.example)
@@ -275,7 +281,7 @@ export default function Home() {
                         }}
                         className="text-sm text-primary/80 hover:text-primary mt-4 text-left w-full"
                       >
-                       {feature.title === 'Voice Messages' ? 'Try Voice Messages' : `Try: "${feature.example}"`}
+                       {feature.title === 'Voice Messages' ? 'Try Voice Messages' : feature.title === 'Deep Thinking' ? 'Try Deep Thinking' : `Try: "${feature.example}"`}
                       </button>
                   </CardContent>
                 </Card>
@@ -376,5 +382,3 @@ export default function Home() {
 
   return showWelcome ? <WelcomeScreen /> : <ChatInterface />;
 }
-
-    
